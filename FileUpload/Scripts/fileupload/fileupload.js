@@ -11,7 +11,7 @@
         file = document.querySelector('#file-upload').files[0];
         $('#file-upload').hide();
         $('#file-upload-submit').hide();
-
+        startTimer();
         upload_file(0);
         return false;
     }
@@ -22,6 +22,7 @@
         $('#file-upload-submit').show();
         $('.progress').css('visibility', 'hidden');
         $('.progress-bar.file-upload').css('width', '0%').text('0%');
+        
     });
     $('#file-upload-submit').on('click', start_upload);
 
@@ -29,7 +30,8 @@
         var action = (start === 0) ? 'create' : 'append';
         var next_slice = start + slice_size + 1;
         var blob = file.slice(start, next_slice);
-
+        var filename = file.name;
+        
         reader.onloadend = function (event) {
             if (event.target.readyState !== FileReader.DONE) {
                 return;
@@ -40,10 +42,12 @@
                 type: 'POST',
                 dataType: 'json',
                 cache: false,
+                file: filename,
+                fileType : file.type,
                 data: {
                     action: action,
                     file_data: event.target.result,
-                    file: file.name,
+                    file: filename,
                     file_type: file.type
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
@@ -56,13 +60,18 @@
                     if (next_slice < file.size) {
                         // Update upload progress
                         $('.progress-bar.file-upload').css('width', percent_done + '%').text(percent_done + '%');
+                        $('.progress-mb').text(`${Math.floor(size_done / 1048576)}mb of ${Math.floor(file.size / 1048576)}mb`);
                         // More to upload, call function recursively
                         upload_file(next_slice);
                     } else {
                         // Update upload progress
                         $('.file-more').show();
                         $('.progress-bar.file-upload').css('width', '100%').text('100%');
+                        $('.progress-mb').text(`Complete! Uploaded ${Math.floor(size_done / 1048576)}mb`);
+                        buildLink(this.file,this.fileType);
+                        clearTimer();
                     }
+                    
                 }
             });
         };
@@ -71,3 +80,34 @@
     }
 
 })(jQuery);
+var timer = null;
+var totalSeconds = 0;
+function startTimer() {
+    timer = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+    totalSeconds++;
+    let seconds = pad(totalSeconds % 60);
+    let minutes = pad(parseInt(totalSeconds / 60));
+    $('.timer .time').text(minutes + ':' + seconds);
+}
+
+function clearTimer() {
+    clearInterval(timer);
+    totalSeconds = 0;
+}
+
+function pad(val) {
+    var valString = val + "";
+    if (valString.length < 2) {
+        return "0" + valString;
+    } else {
+        return valString;
+    }
+}
+
+function buildLink(file, type) {
+    var link = $(`<div><a href="Files\\${file}" target="_blank">${file}</a></div>`);
+    $('.success').append(link);
+}
