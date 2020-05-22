@@ -80,6 +80,21 @@
     }
 
 })(jQuery);
+
+function deleteFile(el) {
+    let f = $(el).data().file;
+    $.ajax({
+        url: 'upload.ashx',
+        data: {
+            action: 'delete',
+            file : f
+        },
+        element : el,
+        success: function () {
+            $(el).parent().remove();
+        }
+    });
+}
 var timer = null;
 var totalSeconds = 0;
 function startTimer() {
@@ -108,6 +123,6 @@ function pad(val) {
 }
 
 function buildLink(file, type) {
-    var link = $(`<div><a href="Files\\${file}" target="_blank">${file}</a></div>`);
+    var link = $(`<div><a href="Files\\${file}" target="_blank">${file}</a><span data-file="${file}" onclick="deleteFile(this);">Delete</span></div>`);
     $('.success').append(link);
 }
